@@ -1,7 +1,7 @@
 use bson::{doc, Bson::Document as BsonDocument, Document};
 use log::info;
 use mongodb::error::Result as MongoResult;
-use mongodb::options::{UpdateModifications, UpdateOptions};
+use mongodb::options::{UpdateModifications, UpdateOptions, DeleteOptions};
 use mongodb::results::InsertOneResult;
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
@@ -61,4 +61,15 @@ pub fn update_one(
 ) {
     let coll = db.collection(collection_name);
     let _result = coll.update_one(query, update, options).unwrap();
+}
+
+
+pub fn delete_one(
+    query: Document,
+    options: impl Into<Option<DeleteOptions>>,
+    collection_name: &str,
+    db: &Database,
+) {
+    let coll = db.collection(collection_name);
+    let _result = coll.delete_one(query, options).unwrap();
 }
