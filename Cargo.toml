@@ -8,6 +8,8 @@ description = "read and write data for mongodb"
 homepage = "https://github.com/sajuthankappan/wread-data-mongodb-rs"
 repository = "https://github.com/sajuthankappan/wread-data-mongodb-rs"
 readme = "README.md"
+keywords = ["mongodb"]
+categories = ["database"]
 
 [dependencies]
 log = "0.4.8"
