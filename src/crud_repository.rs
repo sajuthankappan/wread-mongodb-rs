@@ -1,12 +1,18 @@
 use bson::{doc, Bson::Document as BsonDocument, Document};
 use log::info;
-use mongodb::error::Result as MongoResult;
-use mongodb::options::{UpdateModifications, UpdateOptions, DeleteOptions};
-use mongodb::results::{InsertOneResult, UpdateResult, DeleteResult};
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "write")]
+use mongodb::{
+    error::Result as MongoResult,
+    options::{DeleteOptions, UpdateModifications, UpdateOptions},
+    results::{DeleteResult, InsertOneResult, UpdateResult},
+};
+#[cfg(feature = "write")]
 use std::fmt::Debug;
 
+#[cfg(feature = "read")]
 pub fn find_one<T>(
     filter_document: Document,
     collection_name: &str,
@@ -26,6 +32,7 @@ where
     }
 }
 
+#[cfg(feature = "read")]
 pub fn _find_one_by_field<T>(
     field_name: String,
     value: String,
@@ -38,6 +45,7 @@ where
     self::find_one(doc! {field_name: value}, collection_name, db)
 }
 
+#[cfg(feature = "write")]
 pub fn add<T>(t: &T, collection_name: &str, db: &Database) -> MongoResult<InsertOneResult>
 where
     for<'a> T: Debug + Serialize + Deserialize<'a>,
@@ -52,6 +60,7 @@ where
     }
 }
 
+#[cfg(feature = "write")]
 pub fn update_one(
     query: Document,
     update: impl Into<UpdateModifications>,
@@ -63,7 +72,7 @@ pub fn update_one(
     coll.update_one(query, update, options)
 }
 
-
+#[cfg(feature = "write")]
 pub fn delete_one(
     query: Document,
     options: impl Into<Option<DeleteOptions>>,

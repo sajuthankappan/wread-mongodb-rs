@@ -1,6 +1,6 @@
 [package]
 name = "wread-data-mongodb"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Saju Thankappan <sajuthankappan@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -10,6 +10,11 @@ repository = "https://github.com/sajuthankappan/wread-data-mongodb-rs"
 readme = "README.md"
 keywords = ["mongodb"]
 categories = ["database"]
+
+[features]
+default = ["read"]
+read = []
+write = []
 
 [dependencies]
 log = "0.4.8"
