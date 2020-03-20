@@ -2,7 +2,7 @@ use bson::{doc, Bson::Document as BsonDocument, Document};
 use log::info;
 use mongodb::error::Result as MongoResult;
 use mongodb::options::{UpdateModifications, UpdateOptions, DeleteOptions};
-use mongodb::results::InsertOneResult;
+use mongodb::results::{InsertOneResult, UpdateResult, DeleteResult};
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -46,7 +46,7 @@ where
 
     if let BsonDocument(document) = serialized_item {
         let coll = db.collection(collection_name);
-        return coll.insert_one(document, None);
+        coll.insert_one(document, None)
     } else {
         panic!("Error converting the BSON object into a MongoDB document");
     }
@@ -58,9 +58,9 @@ pub fn update_one(
     options: impl Into<Option<UpdateOptions>>,
     collection_name: &str,
     db: &Database,
-) {
+) -> MongoResult<UpdateResult> {
     let coll = db.collection(collection_name);
-    let _result = coll.update_one(query, update, options).unwrap();
+    coll.update_one(query, update, options)
 }
 
 
@@ -69,7 +69,7 @@ pub fn delete_one(
     options: impl Into<Option<DeleteOptions>>,
     collection_name: &str,
     db: &Database,
-) {
+) -> MongoResult<DeleteResult> {
     let coll = db.collection(collection_name);
-    let _result = coll.delete_one(query, options).unwrap();
+    coll.delete_one(query, options)
 }
