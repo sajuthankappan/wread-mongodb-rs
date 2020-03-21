@@ -21,7 +21,7 @@ pub fn find_one<T>(
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
-    info!("find_one_by_query");
+    info!("find_one");
     let coll = db.collection(collection_name);
     let result = coll.find_one(filter_document, None)?;
     if let Some(document) = result {
@@ -30,6 +30,36 @@ where
     } else {
         return Ok(None);
     }
+}
+
+#[cfg(feature = "read")]
+pub fn find<T>(
+    filter_document: Document,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync + 'static>>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    info!("find");
+    let coll = db.collection(collection_name);
+    let cursor = coll.find(filter_document, None)?;
+    let mut items = Vec::<T>::new();
+    
+    for result in cursor {
+        match result {
+            Ok(document) => {
+                let item = bson::from_bson::<T>(BsonDocument(document))?;
+                items.push(item);
+            },
+            Err(e) => {
+                //TODO: Revisit this
+                panic!(e);
+            },
+        }
+    }
+
+    Ok(items)
 }
 
 #[cfg(feature = "read")]
