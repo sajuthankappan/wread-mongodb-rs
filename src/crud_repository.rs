@@ -1,5 +1,6 @@
 use bson::{doc, Bson::Document as BsonDocument, Document};
-use log::info;
+use log::trace;
+use mongodb::options::FindOptions;
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
 
@@ -21,7 +22,7 @@ pub fn find_one<T>(
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
-    info!("find_one");
+    trace!("find_one");
     let coll = db.collection(collection_name);
     let result = coll.find_one(filter_document, None)?;
     if let Some(document) = result {
@@ -41,25 +42,59 @@ pub fn find<T>(
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
-    info!("find");
+    trace!("find");
+    find_generic(filter_document, None, collection_name, db)
+}
+
+#[cfg(feature = "read")]
+pub fn find_with_sort<T>(
+    filter_document: Document,
+    sort_document: Document,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync + 'static>>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    trace!("find_with_sort");
+    find_generic(filter_document, Some(sort_document), collection_name, db)
+}
+
+fn find_generic<T>(
+    filter_document: Document,
+    sort_document_option: Option<Document>,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync + 'static>>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    trace!("find_generic");
     let coll = db.collection(collection_name);
-    let cursor = coll.find(filter_document, None)?;
+    let find_options = get_sort_find_option(sort_document_option);
+    let cursor = coll.find(filter_document, find_options)?;
     let mut items = Vec::<T>::new();
-    
     for result in cursor {
         match result {
             Ok(document) => {
                 let item = bson::from_bson::<T>(BsonDocument(document))?;
                 items.push(item);
-            },
-            Err(e) => {
-                //TODO: Revisit this
-                panic!(e);
-            },
+            }
+            Err(err) => {
+                return Err(From::from(format!("{:?}", err)));
+            }
         }
     }
 
     Ok(items)
+}
+
+fn get_sort_find_option(sort_document_option: Option<Document>) -> Option<FindOptions> {
+    if let Some(sort_document) = sort_document_option {
+        Some(FindOptions::builder().sort(sort_document).build())
+    } else {
+        None
+    }
 }
 
 #[cfg(feature = "read")]
