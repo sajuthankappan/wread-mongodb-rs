@@ -1,12 +1,12 @@
 use bson::{doc, Bson::Document as BsonDocument, Document};
 use log::trace;
+use mongodb::error::Error;
 use mongodb::options::FindOptions;
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "write")]
 use mongodb::{
-    error::Result as MongoResult,
     options::{DeleteOptions, UpdateModifications, UpdateOptions},
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
@@ -18,7 +18,7 @@ pub fn find_one<T>(
     filter_document: Document,
     collection_name: &str,
     db: &Database,
-) -> Result<Option<T>, Box<dyn std::error::Error + Send + Sync + 'static>>
+) -> Result<Option<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
@@ -38,7 +38,7 @@ pub fn find<T>(
     filter_document: Document,
     collection_name: &str,
     db: &Database,
-) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync + 'static>>
+) -> Result<Vec<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
@@ -52,7 +52,7 @@ pub fn find_with_sort<T>(
     sort_document: Document,
     collection_name: &str,
     db: &Database,
-) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync + 'static>>
+) -> Result<Vec<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
@@ -65,7 +65,7 @@ fn find_generic<T>(
     sort_document_option: Option<Document>,
     collection_name: &str,
     db: &Database,
-) -> Result<Vec<T>, Box<dyn std::error::Error + Send + Sync + 'static>>
+) -> Result<Vec<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
@@ -81,7 +81,7 @@ where
                 items.push(item);
             }
             Err(err) => {
-                return Err(From::from(format!("{:?}", err)));
+                return Err(err);
             }
         }
     }
@@ -103,7 +103,7 @@ pub fn _find_one_by_field<T>(
     value: String,
     collection_name: &str,
     db: &Database,
-) -> Result<Option<T>, Box<dyn std::error::Error + Send + Sync + 'static>>
+) -> Result<Option<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
@@ -111,7 +111,7 @@ where
 }
 
 #[cfg(feature = "write")]
-pub fn add<T>(t: &T, collection_name: &str, db: &Database) -> MongoResult<InsertOneResult>
+pub fn add<T>(t: &T, collection_name: &str, db: &Database) -> Result<InsertOneResult, Error>
 where
     for<'a> T: Debug + Serialize + Deserialize<'a>,
 {
@@ -132,7 +132,7 @@ pub fn update_one(
     options: impl Into<Option<UpdateOptions>>,
     collection_name: &str,
     db: &Database,
-) -> MongoResult<UpdateResult> {
+) -> Result<UpdateResult, Error> {
     let coll = db.collection(collection_name);
     coll.update_one(query, update, options)
 }
@@ -143,7 +143,7 @@ pub fn delete_one(
     options: impl Into<Option<DeleteOptions>>,
     collection_name: &str,
     db: &Database,
-) -> MongoResult<DeleteResult> {
+) -> Result<DeleteResult, Error> {
     let coll = db.collection(collection_name);
     coll.delete_one(query, options)
 }
