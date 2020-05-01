@@ -1,3 +1,8 @@
+## 0.7.0
+
+* Add find_by_id, find_by_string_id, find_one_by_string_field, find_by_string_field method
+* Re-export of bson
+
 ## 0.6.1
 
 * Replace returning errors as Box<dyn std::error::Error + Send + Sync + 'static> to mongodb::error::Error

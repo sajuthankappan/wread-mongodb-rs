@@ -1,3 +1,4 @@
+use bson::oid::ObjectId;
 use bson::{doc, Bson::Document as BsonDocument, Document};
 use log::trace;
 use mongodb::error::Error;
@@ -31,6 +32,64 @@ where
     } else {
         return Ok(None);
     }
+}
+
+#[cfg(feature = "read")]
+pub fn find_by_id<T>(
+    id: &ObjectId,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Option<T>, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    trace!("find_by_id");
+    let filter_document = doc! {"_id":  id};
+    find_one(filter_document, &collection_name, &db)
+}
+
+#[cfg(feature = "read")]
+pub fn find_by_string_id<T>(
+    id: &String,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Option<T>, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    trace!("find_by_string_id");
+    let filter_document = doc! {"_id": id};
+    find_one(filter_document, &collection_name, &db)
+}
+
+#[cfg(feature = "read")]
+pub fn find_one_by_string_field<T>(
+    name: &str,
+    value: &String,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Option<T>, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    trace!("find_by_string_id");
+    let filter_document = doc! {name: value};
+    find_one(filter_document, &collection_name, &db)
+}
+
+#[cfg(feature = "read")]
+pub fn find_by_string_field<T>(
+    name: &str,
+    value: &String,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Vec<T>, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    trace!("find_by_string_id");
+    let filter_document = doc! {name: value};
+    find(filter_document, &collection_name, &db)
 }
 
 #[cfg(feature = "read")]
