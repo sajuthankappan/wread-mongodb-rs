@@ -1,3 +1,4 @@
+use async_std::stream::StreamExt;
 use bson::oid::ObjectId;
 use bson::{doc, Bson::Document as BsonDocument, Document};
 use log::trace;
@@ -15,7 +16,7 @@ use mongodb::{
 use std::fmt::Debug;
 
 #[cfg(feature = "read")]
-pub fn find_one<T>(
+pub async fn find_one<T>(
     filter_document: Document,
     collection_name: &str,
     db: &Database,
@@ -25,7 +26,7 @@ where
 {
     trace!("find_one");
     let coll = db.collection(collection_name);
-    let result = coll.find_one(filter_document, None)?;
+    let result = coll.find_one(filter_document, None).await?;
     if let Some(document) = result {
         let t = bson::from_bson::<T>(BsonDocument(document))?;
         return Ok(Some(t));
@@ -35,7 +36,7 @@ where
 }
 
 #[cfg(feature = "read")]
-pub fn find_by_id<T>(
+pub async fn find_by_id<T>(
     id: &ObjectId,
     collection_name: &str,
     db: &Database,
@@ -45,11 +46,11 @@ where
 {
     trace!("find_by_id");
     let filter_document = doc! {"_id":  id};
-    find_one(filter_document, &collection_name, &db)
+    find_one(filter_document, &collection_name, &db).await
 }
 
 #[cfg(feature = "read")]
-pub fn find_by_string_id<T>(
+pub async fn find_by_string_id<T>(
     id: &String,
     collection_name: &str,
     db: &Database,
@@ -59,11 +60,11 @@ where
 {
     trace!("find_by_string_id");
     let filter_document = doc! {"_id": id};
-    find_one(filter_document, &collection_name, &db)
+    find_one(filter_document, &collection_name, &db).await
 }
 
 #[cfg(feature = "read")]
-pub fn find_one_by_string_field<T>(
+pub async fn find_one_by_string_field<T>(
     name: &str,
     value: &String,
     collection_name: &str,
@@ -74,11 +75,11 @@ where
 {
     trace!("find_by_string_id");
     let filter_document = doc! {name: value};
-    find_one(filter_document, &collection_name, &db)
+    find_one(filter_document, &collection_name, &db).await
 }
 
 #[cfg(feature = "read")]
-pub fn find_by_string_field<T>(
+pub async fn find_by_string_field<T>(
     name: &str,
     value: &String,
     collection_name: &str,
@@ -89,11 +90,11 @@ where
 {
     trace!("find_by_string_id");
     let filter_document = doc! {name: value};
-    find(filter_document, &collection_name, &db)
+    find(filter_document, &collection_name, &db).await
 }
 
 #[cfg(feature = "read")]
-pub fn find<T>(
+pub async fn find<T>(
     filter_document: Document,
     collection_name: &str,
     db: &Database,
@@ -102,11 +103,11 @@ where
     for<'a> T: Serialize + Deserialize<'a>,
 {
     trace!("find");
-    find_generic(filter_document, None, collection_name, db)
+    find_generic(filter_document, None, collection_name, db).await
 }
 
 #[cfg(feature = "read")]
-pub fn find_with_sort<T>(
+pub async fn find_with_sort<T>(
     filter_document: Document,
     sort_document: Document,
     collection_name: &str,
@@ -116,10 +117,10 @@ where
     for<'a> T: Serialize + Deserialize<'a>,
 {
     trace!("find_with_sort");
-    find_generic(filter_document, Some(sort_document), collection_name, db)
+    find_generic(filter_document, Some(sort_document), collection_name, db).await
 }
 
-fn find_generic<T>(
+async fn find_generic<T>(
     filter_document: Document,
     sort_document_option: Option<Document>,
     collection_name: &str,
@@ -131,9 +132,9 @@ where
     trace!("find_generic");
     let coll = db.collection(collection_name);
     let find_options = get_sort_find_option(sort_document_option);
-    let cursor = coll.find(filter_document, find_options)?;
+    let mut cursor = coll.find(filter_document, find_options).await?;
     let mut items = Vec::<T>::new();
-    for result in cursor {
+    while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
                 let item = bson::from_bson::<T>(BsonDocument(document))?;
@@ -157,7 +158,7 @@ fn get_sort_find_option(sort_document_option: Option<Document>) -> Option<FindOp
 }
 
 #[cfg(feature = "read")]
-pub fn _find_one_by_field<T>(
+pub async fn _find_one_by_field<T>(
     field_name: String,
     value: String,
     collection_name: &str,
@@ -166,11 +167,11 @@ pub fn _find_one_by_field<T>(
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
-    self::find_one(doc! {field_name: value}, collection_name, db)
+    self::find_one(doc! {field_name: value}, collection_name, db).await
 }
 
 #[cfg(feature = "write")]
-pub fn add<T>(t: &T, collection_name: &str, db: &Database) -> Result<InsertOneResult, Error>
+pub async fn add<T>(t: &T, collection_name: &str, db: &Database) -> Result<InsertOneResult, Error>
 where
     for<'a> T: Debug + Serialize + Deserialize<'a>,
 {
@@ -178,14 +179,14 @@ where
 
     if let BsonDocument(document) = serialized_item {
         let coll = db.collection(collection_name);
-        coll.insert_one(document, None)
+        coll.insert_one(document, None).await
     } else {
         panic!("Error converting the BSON object into a MongoDB document");
     }
 }
 
 #[cfg(feature = "write")]
-pub fn update_one(
+pub async fn update_one(
     query: Document,
     update: impl Into<UpdateModifications>,
     options: impl Into<Option<UpdateOptions>>,
@@ -193,16 +194,16 @@ pub fn update_one(
     db: &Database,
 ) -> Result<UpdateResult, Error> {
     let coll = db.collection(collection_name);
-    coll.update_one(query, update, options)
+    coll.update_one(query, update, options).await
 }
 
 #[cfg(feature = "write")]
-pub fn delete_one(
+pub async fn delete_one(
     query: Document,
     options: impl Into<Option<DeleteOptions>>,
     collection_name: &str,
     db: &Database,
 ) -> Result<DeleteResult, Error> {
     let coll = db.collection(collection_name);
-    coll.delete_one(query, options)
+    coll.delete_one(query, options).await
 }

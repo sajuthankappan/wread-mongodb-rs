@@ -1,3 +1,7 @@
+## 0.8.0
+
+* Upgrade mongodb to 0.10.0 and move to async functions
+
 ## 0.7.0
 
 * Add find_by_id, find_by_string_id, find_one_by_string_field, find_by_string_field method
