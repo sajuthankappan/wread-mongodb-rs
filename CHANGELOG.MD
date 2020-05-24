@@ -1,3 +1,7 @@
+## 0.8.1
+
+* Revert back to mongodb 0.9.2, but retaining async functions
+
 ## 0.8.0
 
 * Upgrade mongodb to 0.10.0 and move to async functions

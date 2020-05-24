@@ -1,6 +1,6 @@
 [package]
 name = "wread-data-mongodb"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Saju Thankappan <sajuthankappan@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -23,6 +23,4 @@ serde = { version = "1.0.110", features = ["derive"] }
 async-std = "1.6.0"
 
 [dependencies.mongodb]
-version = "0.10.0"
-default-features = false
-features = ["async-std-runtime"]
+version = "0.9.2"
