@@ -1,6 +1,8 @@
-use bson::oid::ObjectId;
-use bson::{doc, Bson::Document as BsonDocument, Document};
+use futures::stream::StreamExt;
 use log::trace;
+use mongodb::bson;
+use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{doc, Bson::Document as BsonDocument, Document};
 use mongodb::error::Error;
 use mongodb::options::FindOptions;
 use mongodb::Database;
@@ -25,7 +27,7 @@ where
 {
     trace!("find_one");
     let coll = db.collection(collection_name);
-    let result = coll.find_one(filter_document, None)?;
+    let result = coll.find_one(filter_document, None).await?;
     if let Some(document) = result {
         let t = bson::from_bson::<T>(BsonDocument(document))?;
         return Ok(Some(t));
@@ -131,9 +133,9 @@ where
     trace!("find_generic");
     let coll = db.collection(collection_name);
     let find_options = get_sort_find_option(sort_document_option);
-    let mut cursor = coll.find(filter_document, find_options)?;
+    let mut cursor = coll.find(filter_document, find_options).await?;
     let mut items = Vec::<T>::new();
-    while let Some(result) = cursor.next() {
+    while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
                 let item = bson::from_bson::<T>(BsonDocument(document))?;
@@ -178,7 +180,7 @@ where
 
     if let BsonDocument(document) = serialized_item {
         let coll = db.collection(collection_name);
-        coll.insert_one(document, None)
+        coll.insert_one(document, None).await
     } else {
         panic!("Error converting the BSON object into a MongoDB document");
     }
@@ -193,7 +195,7 @@ pub async fn update_one(
     db: &Database,
 ) -> Result<UpdateResult, Error> {
     let coll = db.collection(collection_name);
-    coll.update_one(query, update, options)
+    coll.update_one(query, update, options).await
 }
 
 #[cfg(feature = "write")]
@@ -204,5 +206,5 @@ pub async fn delete_one(
     db: &Database,
 ) -> Result<DeleteResult, Error> {
     let coll = db.collection(collection_name);
-    coll.delete_one(query, options)
+    coll.delete_one(query, options).await
 }

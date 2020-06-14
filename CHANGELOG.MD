@@ -1,3 +1,7 @@
+## 0.9.0
+
+* Upgrade mongodb to 1.0.0, and update to async functions using default mongo async runtime (tokio)
+
 ## 0.8.1
 
 * Revert back to mongodb 0.9.2, but retaining async functions
