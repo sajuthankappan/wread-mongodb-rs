@@ -1,3 +1,7 @@
+## 0.10.0
+
+* add find_all
+
 ## 0.9.0
 
 * Upgrade mongodb to 1.0.0, and update to async functions using default mongo async runtime (tokio)

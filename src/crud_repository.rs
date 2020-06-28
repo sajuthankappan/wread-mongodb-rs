@@ -95,6 +95,18 @@ where
 }
 
 #[cfg(feature = "read")]
+pub async fn find_all<T>(
+    collection_name: &str,
+    db: &Database,
+) -> Result<Vec<T>, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    trace!("find_all");
+    find_generic(None, None, collection_name, db).await
+}
+
+#[cfg(feature = "read")]
 pub async fn find<T>(
     filter_document: Document,
     collection_name: &str,
@@ -122,7 +134,7 @@ where
 }
 
 async fn find_generic<T>(
-    filter_document: Document,
+    filter_document: impl Into<Option<Document>>,
     sort_document_option: Option<Document>,
     collection_name: &str,
     db: &Database,
