@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "write")]
 use mongodb::{
-    options::{DeleteOptions, UpdateModifications, UpdateOptions},
+    options::{DeleteOptions, FindOneAndUpdateOptions, UpdateModifications, UpdateOptions},
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
 #[cfg(feature = "write")]
@@ -95,10 +95,7 @@ where
 }
 
 #[cfg(feature = "read")]
-pub async fn find_all<T>(
-    collection_name: &str,
-    db: &Database,
-) -> Result<Vec<T>, Error>
+pub async fn find_all<T>(collection_name: &str, db: &Database) -> Result<Vec<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
@@ -208,6 +205,27 @@ pub async fn update_one(
 ) -> Result<UpdateResult, Error> {
     let coll = db.collection(collection_name);
     coll.update_one(query, update, options).await
+}
+
+#[cfg(feature = "write")]
+pub async fn find_one_and_update<T>(
+    filter: Document,
+    update: impl Into<UpdateModifications>,
+    options: impl Into<Option<FindOneAndUpdateOptions>>,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Option<T>, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    let coll = db.collection(collection_name);
+    let option = coll.find_one_and_update(filter, update, options).await?;
+    if let Some(document) = option {
+        let t = bson::from_bson::<T>(BsonDocument(document))?;
+        return Ok(Some(t));
+    } else {
+        return Ok(None);
+    }
 }
 
 #[cfg(feature = "write")]

@@ -1,6 +1,10 @@
+## 0.11.0
+
+* Add find_one_and_update
+
 ## 0.10.0
 
-* add find_all
+* Add find_all
 
 ## 0.9.0
 
