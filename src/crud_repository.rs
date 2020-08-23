@@ -10,7 +10,10 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "write")]
 use mongodb::{
-    options::{DeleteOptions, FindOneAndUpdateOptions, UpdateModifications, UpdateOptions},
+    options::{
+        DeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, UpdateModifications,
+        UpdateOptions,
+    },
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
 #[cfg(feature = "write")]
@@ -220,6 +223,29 @@ where
 {
     let coll = db.collection(collection_name);
     let option = coll.find_one_and_update(filter, update, options).await?;
+    if let Some(document) = option {
+        let t = bson::from_bson::<T>(BsonDocument(document))?;
+        return Ok(Some(t));
+    } else {
+        return Ok(None);
+    }
+}
+
+#[cfg(feature = "write")]
+pub async fn find_one_and_replace<T>(
+    filter: Document,
+    replacement: Document,
+    options: impl Into<Option<FindOneAndReplaceOptions>>,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Option<T>, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    let coll = db.collection(collection_name);
+    let option = coll
+        .find_one_and_replace(filter, replacement, options)
+        .await?;
     if let Some(document) = option {
         let t = bson::from_bson::<T>(BsonDocument(document))?;
         return Ok(Some(t));
