@@ -234,7 +234,7 @@ where
 #[cfg(feature = "write")]
 pub async fn find_one_and_replace<T>(
     filter: Document,
-    replacement: Document,
+    replacement: &T,
     options: impl Into<Option<FindOneAndReplaceOptions>>,
     collection_name: &str,
     db: &Database,
@@ -243,14 +243,18 @@ where
     for<'a> T: Serialize + Deserialize<'a>,
 {
     let coll = db.collection(collection_name);
-    let option = coll
-        .find_one_and_replace(filter, replacement, options)
-        .await?;
-    if let Some(document) = option {
-        let t = bson::from_bson::<T>(BsonDocument(document))?;
-        return Ok(Some(t));
+    let serialized_item = bson::to_bson(&replacement)?;
+
+    if let BsonDocument(document) = serialized_item {
+        let option = coll.find_one_and_replace(filter, document, options).await?;
+        if let Some(document) = option {
+            let t = bson::from_bson::<T>(BsonDocument(document))?;
+            return Ok(Some(t));
+        } else {
+            return Ok(None);
+        }
     } else {
-        return Ok(None);
+        panic!("Error converting the BSON object into a MongoDB document");
     }
 }
 

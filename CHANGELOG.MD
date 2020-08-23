@@ -1,3 +1,7 @@
+## 0.12.1
+
+* Fix find_one_and_replace
+
 ## 0.12.0
 
 * Add find_one_and_replace and update dependent crate versions
