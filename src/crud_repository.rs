@@ -70,7 +70,7 @@ where
 #[cfg(feature = "read")]
 pub async fn find_one_by_string_field<T>(
     name: &str,
-    value: &String,
+    value: &str,
     collection_name: &str,
     db: &Database,
 ) -> Result<Option<T>, Error>
@@ -85,14 +85,14 @@ where
 #[cfg(feature = "read")]
 pub async fn find_by_string_field<T>(
     name: &str,
-    value: &String,
+    value: &str,
     collection_name: &str,
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
-    trace!("find_by_string_id");
+    trace!("find_by_string_field");
     let filter_document = doc! {name: value};
     find(filter_document, &collection_name, &db).await
 }

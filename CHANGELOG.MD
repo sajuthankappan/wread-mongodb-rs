@@ -1,5 +1,9 @@
 ## 0.12.1
 
+* Change parameter type from String to &str in find_one_by_string_field
+
+## 0.12.1
+
 * Fix find_one_and_replace
 
 ## 0.12.0
