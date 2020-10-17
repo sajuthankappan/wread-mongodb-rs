@@ -55,7 +55,7 @@ where
 
 #[cfg(feature = "read")]
 pub async fn find_by_string_id<T>(
-    id: &String,
+    id: &str,
     collection_name: &str,
     db: &Database,
 ) -> Result<Option<T>, Error>

@@ -1,3 +1,7 @@
+## 0.12.3
+
+* Change parameter type from String to &str in find_by_string_id
+
 ## 0.12.1
 
 * Change parameter type from String to &str in find_one_by_string_field
