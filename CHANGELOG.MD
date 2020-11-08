@@ -1,3 +1,7 @@
+## 0.12.4
+
+* Add replace_one method & removed feature flags
+
 ## 0.12.3
 
 * Change parameter type from String to &str in find_by_string_id

@@ -8,18 +8,15 @@ use mongodb::options::FindOptions;
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "write")]
 use mongodb::{
     options::{
-        DeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, UpdateModifications,
-        UpdateOptions,
+        DeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, ReplaceOptions,
+        UpdateModifications, UpdateOptions,
     },
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
-#[cfg(feature = "write")]
 use std::fmt::Debug;
 
-#[cfg(feature = "read")]
 pub async fn find_one<T>(
     filter_document: Document,
     collection_name: &str,
@@ -39,7 +36,6 @@ where
     }
 }
 
-#[cfg(feature = "read")]
 pub async fn find_by_id<T>(
     id: &ObjectId,
     collection_name: &str,
@@ -53,7 +49,6 @@ where
     find_one(filter_document, &collection_name, &db).await
 }
 
-#[cfg(feature = "read")]
 pub async fn find_by_string_id<T>(
     id: &str,
     collection_name: &str,
@@ -67,7 +62,6 @@ where
     find_one(filter_document, &collection_name, &db).await
 }
 
-#[cfg(feature = "read")]
 pub async fn find_one_by_string_field<T>(
     name: &str,
     value: &str,
@@ -82,7 +76,6 @@ where
     find_one(filter_document, &collection_name, &db).await
 }
 
-#[cfg(feature = "read")]
 pub async fn find_by_string_field<T>(
     name: &str,
     value: &str,
@@ -97,7 +90,6 @@ where
     find(filter_document, &collection_name, &db).await
 }
 
-#[cfg(feature = "read")]
 pub async fn find_all<T>(collection_name: &str, db: &Database) -> Result<Vec<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
@@ -106,7 +98,6 @@ where
     find_generic(None, None, collection_name, db).await
 }
 
-#[cfg(feature = "read")]
 pub async fn find<T>(
     filter_document: Document,
     collection_name: &str,
@@ -119,7 +110,6 @@ where
     find_generic(filter_document, None, collection_name, db).await
 }
 
-#[cfg(feature = "read")]
 pub async fn find_with_sort<T>(
     filter_document: Document,
     sort_document: Document,
@@ -170,7 +160,6 @@ fn get_sort_find_option(sort_document_option: Option<Document>) -> Option<FindOp
     }
 }
 
-#[cfg(feature = "read")]
 pub async fn _find_one_by_field<T>(
     field_name: String,
     value: String,
@@ -183,7 +172,6 @@ where
     self::find_one(doc! {field_name: value}, collection_name, db).await
 }
 
-#[cfg(feature = "write")]
 pub async fn add<T>(t: &T, collection_name: &str, db: &Database) -> Result<InsertOneResult, Error>
 where
     for<'a> T: Debug + Serialize + Deserialize<'a>,
@@ -198,7 +186,6 @@ where
     }
 }
 
-#[cfg(feature = "write")]
 pub async fn update_one(
     query: Document,
     update: impl Into<UpdateModifications>,
@@ -210,7 +197,6 @@ pub async fn update_one(
     coll.update_one(query, update, options).await
 }
 
-#[cfg(feature = "write")]
 pub async fn find_one_and_update<T>(
     filter: Document,
     update: impl Into<UpdateModifications>,
@@ -231,7 +217,6 @@ where
     }
 }
 
-#[cfg(feature = "write")]
 pub async fn find_one_and_replace<T>(
     filter: Document,
     replacement: &T,
@@ -258,7 +243,26 @@ where
     }
 }
 
-#[cfg(feature = "write")]
+pub async fn replace_one<T>(
+    query: Document,
+    replacement: &T,
+    options: impl Into<Option<ReplaceOptions>>,
+    collection_name: &str,
+    db: &Database,
+) -> Result<UpdateResult, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    let coll = db.collection(collection_name);
+    let serialized_item = bson::to_bson(&replacement)?;
+
+    if let BsonDocument(document) = serialized_item {
+        coll.replace_one(query, document, options).await
+    } else {
+        panic!("Error converting the BSON object into a MongoDB document");
+    }
+}
+
 pub async fn delete_one(
     query: Document,
     options: impl Into<Option<DeleteOptions>>,
