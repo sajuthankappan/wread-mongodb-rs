@@ -1,3 +1,7 @@
+## 0.14.0
+
+* Rename crate name to wread-mongodb
+
 ## 0.12.4
 
 * Add replace_one method & removed feature flags
