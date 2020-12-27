@@ -1,3 +1,8 @@
+## 0.15.0
+
+* Add aggregate & count methods
+* Breaking change: find method renamed to find_simple
+
 ## 0.14.0
 
 * Rename crate name to wread-mongodb

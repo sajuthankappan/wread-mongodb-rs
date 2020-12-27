@@ -1,11 +1,11 @@
 use futures::stream::StreamExt;
 use log::trace;
-use mongodb::bson;
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::{doc, Bson::Document as BsonDocument, Document};
 use mongodb::error::Error;
 use mongodb::options::FindOptions;
 use mongodb::Database;
+use mongodb::{bson, options::AggregateOptions};
 use serde::{Deserialize, Serialize};
 
 use mongodb::{
@@ -87,7 +87,7 @@ where
 {
     trace!("find_by_string_field");
     let filter_document = doc! {name: value};
-    find(filter_document, &collection_name, &db).await
+    find_simple(filter_document, &collection_name, &db).await
 }
 
 pub async fn find_all<T>(collection_name: &str, db: &Database) -> Result<Vec<T>, Error>
@@ -95,10 +95,10 @@ where
     for<'a> T: Serialize + Deserialize<'a>,
 {
     trace!("find_all");
-    find_generic(None, None, collection_name, db).await
+    find(None, None, collection_name, db).await
 }
 
-pub async fn find<T>(
+pub async fn find_simple<T>(
     filter_document: Document,
     collection_name: &str,
     db: &Database,
@@ -107,7 +107,7 @@ where
     for<'a> T: Serialize + Deserialize<'a>,
 {
     trace!("find");
-    find_generic(filter_document, None, collection_name, db).await
+    find(filter_document, None, collection_name, db).await
 }
 
 pub async fn find_with_sort<T>(
@@ -120,23 +120,63 @@ where
     for<'a> T: Serialize + Deserialize<'a>,
 {
     trace!("find_with_sort");
-    find_generic(filter_document, Some(sort_document), collection_name, db).await
+    let sort_option = get_sort_find_option(Some(sort_document));
+    find(filter_document, sort_option, collection_name, db).await
 }
 
-async fn find_generic<T>(
+async fn find<T>(
     filter_document: impl Into<Option<Document>>,
-    sort_document_option: Option<Document>,
+    options: impl Into<Option<FindOptions>>,
     collection_name: &str,
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
     for<'a> T: Serialize + Deserialize<'a>,
 {
-    trace!("find_generic");
+    trace!("find");
     let coll = db.collection(collection_name);
-    let find_options = get_sort_find_option(sort_document_option);
-    let mut cursor = coll.find(filter_document, find_options).await?;
+
+    let mut cursor = coll.find(filter_document, options).await?;
     let mut items = Vec::<T>::new();
+    while let Some(result) = cursor.next().await {
+        match result {
+            Ok(document) => {
+                let item = bson::from_bson::<T>(BsonDocument(document))?;
+                items.push(item);
+            }
+            Err(err) => {
+                return Err(err);
+            }
+        }
+    }
+
+    Ok(items)
+}
+
+pub async fn count_documents(
+    filter: impl Into<Option<Document>>,
+    collection_name: &str,
+    db: &Database,
+) -> Result<i64, Error> {
+    trace!("count_documents");
+    let coll = db.collection(collection_name);
+    coll.count_documents(filter, None).await
+}
+
+pub async fn aggregate<T>(
+    pipeline: impl IntoIterator<Item = Document>,
+    options: impl Into<Option<AggregateOptions>>,
+    collection_name: &str,
+    db: &Database,
+) -> Result<Vec<T>, Error>
+where
+    for<'a> T: Serialize + Deserialize<'a>,
+{
+    trace!("aggregate");
+    let coll = db.collection(collection_name);
+    let mut cursor = coll.aggregate(pipeline, options).await?;
+    let mut items = Vec::<T>::new();
+
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
