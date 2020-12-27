@@ -1,6 +1,6 @@
 [package]
 name = "wread-mongodb"
-version = "0.15.0"
+version = "0.15.1"
 authors = ["Saju Thankappan <sajuthankappan@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"

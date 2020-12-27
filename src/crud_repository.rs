@@ -124,7 +124,7 @@ where
     find(filter_document, sort_option, collection_name, db).await
 }
 
-async fn find<T>(
+pub async fn find<T>(
     filter_document: impl Into<Option<Document>>,
     options: impl Into<Option<FindOptions>>,
     collection_name: &str,
