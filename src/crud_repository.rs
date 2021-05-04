@@ -6,7 +6,7 @@ use mongodb::error::Error;
 use mongodb::options::FindOptions;
 use mongodb::Database;
 use mongodb::{bson, options::AggregateOptions};
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use mongodb::{
     options::{
@@ -23,17 +23,11 @@ pub async fn find_one<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find_one");
     let coll = db.collection(collection_name);
-    let result = coll.find_one(filter_document, None).await?;
-    if let Some(document) = result {
-        let t = bson::from_bson::<T>(BsonDocument(document))?;
-        return Ok(Some(t));
-    } else {
-        return Ok(None);
-    }
+    coll.find_one(filter_document, None).await
 }
 
 pub async fn find_by_id<T>(
@@ -42,7 +36,7 @@ pub async fn find_by_id<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find_by_id");
     let filter_document = doc! {"_id":  id};
@@ -55,7 +49,7 @@ pub async fn find_by_string_id<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find_by_string_id");
     let filter_document = doc! {"_id": id};
@@ -69,7 +63,7 @@ pub async fn find_one_by_string_field<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find_by_string_id");
     let filter_document = doc! {name: value};
@@ -83,7 +77,7 @@ pub async fn find_by_string_field<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find_by_string_field");
     let filter_document = doc! {name: value};
@@ -92,7 +86,7 @@ where
 
 pub async fn find_all<T>(collection_name: &str, db: &Database) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find_all");
     find(None, None, collection_name, db).await
@@ -104,7 +98,7 @@ pub async fn find_simple<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find");
     find(filter_document, None, collection_name, db).await
@@ -117,7 +111,7 @@ pub async fn find_with_sort<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find_with_sort");
     let sort_option = get_sort_find_option(Some(sort_document));
@@ -131,7 +125,7 @@ pub async fn find<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("find");
     let coll = db.collection(collection_name);
@@ -141,8 +135,7 @@ where
     while let Some(result) = cursor.next().await {
         match result {
             Ok(document) => {
-                let item = bson::from_bson::<T>(BsonDocument(document))?;
-                items.push(item);
+                items.push(document);
             }
             Err(err) => {
                 return Err(err);
@@ -159,7 +152,7 @@ pub async fn count_documents(
     db: &Database,
 ) -> Result<i64, Error> {
     trace!("count_documents");
-    let coll = db.collection(collection_name);
+    let coll = db.collection::<Document>(collection_name);
     coll.count_documents(filter, None).await
 }
 
@@ -170,10 +163,10 @@ pub async fn aggregate<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     trace!("aggregate");
-    let coll = db.collection(collection_name);
+    let coll = db.collection::<Document>(collection_name);
     let mut cursor = coll.aggregate(pipeline, options).await?;
     let mut items = Vec::<T>::new();
 
@@ -207,23 +200,17 @@ pub async fn _find_one_by_field<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     self::find_one(doc! {field_name: value}, collection_name, db).await
 }
 
-pub async fn add<T>(t: &T, collection_name: &str, db: &Database) -> Result<InsertOneResult, Error>
+pub async fn add<T>(item: T, collection_name: &str, db: &Database) -> Result<InsertOneResult, Error>
 where
-    for<'a> T: Debug + Serialize + Deserialize<'a>,
+    for<'de> T: Debug + Serialize + Deserialize<'de> + DeserializeOwned + Unpin + Debug,
 {
-    let serialized_item = bson::to_bson(&t)?;
-
-    if let BsonDocument(document) = serialized_item {
-        let coll = db.collection(collection_name);
-        coll.insert_one(document, None).await
-    } else {
-        panic!("Error converting the BSON object into a MongoDB document");
-    }
+    let coll = db.collection(collection_name);
+    coll.insert_one(item, None).await
 }
 
 pub async fn update_one(
@@ -233,7 +220,7 @@ pub async fn update_one(
     collection_name: &str,
     db: &Database,
 ) -> Result<UpdateResult, Error> {
-    let coll = db.collection(collection_name);
+    let coll = db.collection::<Document>(collection_name);
     coll.update_one(query, update, options).await
 }
 
@@ -245,62 +232,39 @@ pub async fn find_one_and_update<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     let coll = db.collection(collection_name);
-    let option = coll.find_one_and_update(filter, update, options).await?;
-    if let Some(document) = option {
-        let t = bson::from_bson::<T>(BsonDocument(document))?;
-        return Ok(Some(t));
-    } else {
-        return Ok(None);
-    }
+    coll.find_one_and_update(filter, update, options).await
 }
 
 pub async fn find_one_and_replace<T>(
     filter: Document,
-    replacement: &T,
+    replacement: T,
     options: impl Into<Option<FindOneAndReplaceOptions>>,
     collection_name: &str,
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'de> T: Serialize + DeserializeOwned + Deserialize<'de> + Unpin + Debug,
 {
     let coll = db.collection(collection_name);
-    let serialized_item = bson::to_bson(&replacement)?;
-
-    if let BsonDocument(document) = serialized_item {
-        let option = coll.find_one_and_replace(filter, document, options).await?;
-        if let Some(document) = option {
-            let t = bson::from_bson::<T>(BsonDocument(document))?;
-            return Ok(Some(t));
-        } else {
-            return Ok(None);
-        }
-    } else {
-        panic!("Error converting the BSON object into a MongoDB document");
-    }
+    coll.find_one_and_replace(filter, replacement, options)
+        .await
 }
 
 pub async fn replace_one<T>(
     query: Document,
-    replacement: &T,
+    replacement: T,
     options: impl Into<Option<ReplaceOptions>>,
     collection_name: &str,
     db: &Database,
 ) -> Result<UpdateResult, Error>
 where
-    for<'a> T: Serialize + Deserialize<'a>,
+    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
 {
     let coll = db.collection(collection_name);
-    let serialized_item = bson::to_bson(&replacement)?;
-
-    if let BsonDocument(document) = serialized_item {
-        coll.replace_one(query, document, options).await
-    } else {
-        panic!("Error converting the BSON object into a MongoDB document");
-    }
+    coll.replace_one(query, replacement, options).await
 }
 
 pub async fn delete_one(
@@ -309,6 +273,6 @@ pub async fn delete_one(
     collection_name: &str,
     db: &Database,
 ) -> Result<DeleteResult, Error> {
-    let coll = db.collection(collection_name);
+    let coll = db.collection::<Document>(collection_name);
     coll.delete_one(query, options).await
 }
