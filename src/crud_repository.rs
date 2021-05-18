@@ -150,7 +150,7 @@ pub async fn count_documents(
     filter: impl Into<Option<Document>>,
     collection_name: &str,
     db: &Database,
-) -> Result<i64, Error> {
+) -> Result<u64, Error> {
     trace!("count_documents");
     let coll = db.collection::<Document>(collection_name);
     coll.count_documents(filter, None).await

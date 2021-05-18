@@ -1,6 +1,6 @@
 [package]
 name = "wread-mongodb"
-version = "0.16.1"
+version = "0.16.3"
 authors = ["Saju Thankappan <sajuthankappan@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -14,5 +14,5 @@ categories = ["database"]
 [dependencies]
 futures = "0.3.7"
 log = "0.4.11"
-mongodb = "2.0.0-alpha.1"
+mongodb = "2.0.0-beta"
 serde = { version = "1.0.117", features = ["derive"] }
