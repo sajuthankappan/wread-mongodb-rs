@@ -6,7 +6,7 @@ use mongodb::error::Error;
 use mongodb::options::FindOptions;
 use mongodb::Database;
 use mongodb::{bson, options::AggregateOptions};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 
 use mongodb::{
     options::{
@@ -15,6 +15,7 @@ use mongodb::{
     },
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
+use std::borrow::Borrow;
 use std::fmt::Debug;
 
 pub async fn find_one<T>(
@@ -205,9 +206,13 @@ where
     self::find_one(doc! {field_name: value}, collection_name, db).await
 }
 
-pub async fn add<T>(item: T, collection_name: &str, db: &Database) -> Result<InsertOneResult, Error>
+pub async fn add<T>(
+    item: impl Borrow<T>,
+    collection_name: &str,
+    db: &Database,
+) -> Result<InsertOneResult, Error>
 where
-    for<'de> T: Debug + Serialize + Deserialize<'de> + DeserializeOwned + Unpin + Debug,
+    T: Serialize,
 {
     let coll = db.collection(collection_name);
     coll.insert_one(item, None).await
@@ -232,7 +237,7 @@ pub async fn find_one_and_update<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned,
 {
     let coll = db.collection(collection_name);
     coll.find_one_and_update(filter, update, options).await
@@ -240,13 +245,13 @@ where
 
 pub async fn find_one_and_replace<T>(
     filter: Document,
-    replacement: T,
+    replacement: impl Borrow<T>,
     options: impl Into<Option<FindOneAndReplaceOptions>>,
     collection_name: &str,
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'de> T: Serialize + DeserializeOwned + Deserialize<'de> + Unpin + Debug,
+    T: Serialize + DeserializeOwned,
 {
     let coll = db.collection(collection_name);
     coll.find_one_and_replace(filter, replacement, options)
@@ -255,13 +260,13 @@ where
 
 pub async fn replace_one<T>(
     query: Document,
-    replacement: T,
+    replacement: impl Borrow<T>,
     options: impl Into<Option<ReplaceOptions>>,
     collection_name: &str,
     db: &Database,
 ) -> Result<UpdateResult, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: Serialize,
 {
     let coll = db.collection(collection_name);
     coll.replace_one(query, replacement, options).await
