@@ -1,3 +1,7 @@
+## 0.17.0
+
+* Upgrade mongodb to 2.0.0-beta.3
+
 ## 0.15.0
 
 * Add aggregate & count methods

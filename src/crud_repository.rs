@@ -16,7 +16,6 @@ use mongodb::{
     results::{DeleteResult, InsertOneResult, UpdateResult},
 };
 use std::borrow::Borrow;
-use std::fmt::Debug;
 
 pub async fn find_one<T>(
     filter_document: Document,
@@ -24,7 +23,7 @@ pub async fn find_one<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find_one");
     let coll = db.collection(collection_name);
@@ -37,7 +36,7 @@ pub async fn find_by_id<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find_by_id");
     let filter_document = doc! {"_id":  id};
@@ -50,7 +49,7 @@ pub async fn find_by_string_id<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find_by_string_id");
     let filter_document = doc! {"_id": id};
@@ -64,7 +63,7 @@ pub async fn find_one_by_string_field<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find_by_string_id");
     let filter_document = doc! {name: value};
@@ -78,7 +77,7 @@ pub async fn find_by_string_field<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find_by_string_field");
     let filter_document = doc! {name: value};
@@ -87,7 +86,7 @@ where
 
 pub async fn find_all<T>(collection_name: &str, db: &Database) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find_all");
     find(None, None, collection_name, db).await
@@ -99,7 +98,7 @@ pub async fn find_simple<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find");
     find(filter_document, None, collection_name, db).await
@@ -112,7 +111,7 @@ pub async fn find_with_sort<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find_with_sort");
     let sort_option = get_sort_find_option(Some(sort_document));
@@ -126,7 +125,7 @@ pub async fn find<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("find");
     let coll = db.collection(collection_name);
@@ -164,7 +163,7 @@ pub async fn aggregate<T>(
     db: &Database,
 ) -> Result<Vec<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     trace!("aggregate");
     let coll = db.collection::<Document>(collection_name);
@@ -201,7 +200,7 @@ pub async fn _find_one_by_field<T>(
     db: &Database,
 ) -> Result<Option<T>, Error>
 where
-    for<'a> T: Serialize + DeserializeOwned + Unpin + Debug,
+    for<'a> T: DeserializeOwned + Unpin + Send + Sync,
 {
     self::find_one(doc! {field_name: value}, collection_name, db).await
 }
