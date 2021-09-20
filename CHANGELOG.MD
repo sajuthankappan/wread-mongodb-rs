@@ -1,3 +1,7 @@
+## 0.17.1
+
+* Upgrade mongodb to 2.0.0
+
 ## 0.17.0
 
 * Upgrade mongodb to 2.0.0-beta.3
