@@ -1,6 +1,6 @@
 [package]
 name = "wread-mongodb"
-version = "0.18.0"
+version = "0.18.1"
 authors = ["Saju Thankappan <sajuthankappan@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -12,6 +12,7 @@ keywords = ["mongodb"]
 categories = ["database"]
 
 [dependencies]
+async-trait = "0.1.52"
 futures = "0.3.21"
 log = "0.4.14"
 mongodb = "2.1.0"
