@@ -1,6 +1,6 @@
 [package]
 name = "wread-mongodb"
-version = "0.18.1"
+version = "0.18.2"
 authors = ["Saju Thankappan <sajuthankappan@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -17,3 +17,9 @@ futures = "0.3.21"
 log = "0.4.14"
 mongodb = "2.1.0"
 serde = { version = "1.0.136", features = ["derive"] }
+axum = { version = "0.4.2", optional = true }
+axum-helpers = { git = "https://github.com/sajuthankappan/axum-helpers-rs", branch = "main", features = ["handlers", "mongo"], optional = true }
+
+[features]
+default = []
+with-axum = ["axum", "axum-helpers"]
