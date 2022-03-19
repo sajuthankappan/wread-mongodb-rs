@@ -1,11 +1,9 @@
 use std::error::Error;
 
-use crate::unexpected_error::UnexpectedError;
 
 #[derive(Debug)]
 pub enum DataError {
     MongoError(mongodb::error::Error),
-    UnexpectedError(UnexpectedError),
 }
 
 impl std::fmt::Display for DataError {
@@ -29,11 +27,5 @@ impl Error for DataError {
 impl From<mongodb::error::Error> for DataError {
     fn from(e: mongodb::error::Error) -> Self {
         DataError::MongoError(e)
-    }
-}
-
-impl From<UnexpectedError> for DataError {
-    fn from(e: UnexpectedError) -> Self {
-        DataError::UnexpectedError(e)
     }
 }
